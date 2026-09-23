@@ -15,10 +15,25 @@ class db {
         $name = defined('DB_NAME') ? (string) DB_NAME : '';
 
         if ($name === '' || !preg_match('/^[A-Za-z0-9_]+$/', $name)) {
-            die(json_encode(array('outcome' => false, 'message' => 'Unable to connect')));
+            $this->connectionFailure('db_config', 'database name missing or not a valid identifier');
         }
 
         return $name;
+    }
+
+    /**
+     * Report a persistence-boundary failure without disclosing how we connect.
+     *
+     * The category distinguishes a configuration problem from a live connection
+     * problem, which is the distinction an operator needs. Neither branch is
+     * allowed to carry HOST, USER, PASSWORD, DB_NAME or the PDO DSN into the
+     * response — those go nowhere, and only the category reaches the error log.
+     */
+    private function connectionFailure($operation, $detail) {
+
+        error_log('ticket99 operation=' . $operation . ' outcome=failure detail=' . $detail);
+
+        die(json_encode(array('outcome' => false, 'message' => 'Unable to connect')));
     }
 
     public function getDBH() {
@@ -114,7 +129,9 @@ class db {
                     
             }
             catch(PDOException $ex){
-                die(json_encode(array('outcome' => false, 'message' => 'Unable to connect')));
+                // $ex->getMessage() can contain the host, port and user, so it is
+                // deliberately not propagated — only the failure category is.
+                $this->connectionFailure('db_connect', 'database connection refused or unavailable');
             }
             
         }

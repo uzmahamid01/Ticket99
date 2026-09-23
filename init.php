@@ -1,10 +1,83 @@
 <?php
 date_default_timezone_set("Asia/Kolkata");
 ob_start();
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
 
 include 'config.php';
+
+/**
+ * Error display is opt-in.
+ *
+ * The legacy bootstrap forced display_errors on, which prints stack traces —
+ * including connection arguments — straight into the browser. Errors are now
+ * always logged and only displayed when TICKET99_DEBUG is explicitly set to 1,
+ * so a served deployment fails quietly while a developer can still opt in.
+ */
+error_reporting(E_ALL);
+ini_set('log_errors', '1');
+ini_set('display_errors', ticket99_env('TICKET99_DEBUG') === '1' ? '1' : '0');
+
+if (!function_exists('ticket99_fail_closed')) {
+
+/**
+ * Stop the request with a deterministic, secret-safe diagnostic.
+ *
+ * Only the operation and a category of failure are emitted. Configuration
+ * values are never included, so a missing-credential message cannot become a
+ * credential-disclosure message. The same text goes to the error log with an
+ * operation tag so an operator can correlate it without reading the response.
+ */
+function ticket99_fail_closed($operation, $detail) {
+
+    error_log('ticket99 operation=' . $operation . ' outcome=failure detail=' . $detail);
+
+    if (PHP_SAPI !== 'cli' && !headers_sent()) {
+        http_response_code(500);
+    }
+
+    echo 'Ticket99 unavailable (' . $operation . '): ' . $detail . "\n";
+    exit(1);
+}
+
+}
+
+if (!function_exists('ticket99_require_config')) {
+
+/**
+ * Fail closed when required deploy-time configuration is absent.
+ *
+ * This runs before any database object is built and before the signed-in
+ * account checks at the foot of this file, so a misconfigured deployment stops
+ * at the boundary rather than surfacing as a confusing authentication or query
+ * error further in. Only variable names are reported, never their values.
+ */
+function ticket99_require_config() {
+
+    $required = array(
+        'TICKET99_DB_HOST',
+        'TICKET99_DB_PORT',
+        'TICKET99_DB_USER',
+        'TICKET99_DB_PASSWORD',
+        'TICKET99_DB_NAME',
+        'TICKET99_PAGE_TITLE',
+        'TICKET99_WEBSITE_URL',
+    );
+
+    $missing = array();
+
+    foreach ($required as $name) {
+        if (ticket99_env($name) === null) {
+            $missing[] = $name;
+        }
+    }
+
+    if ($missing) {
+        ticket99_fail_closed('config_bootstrap', 'missing required configuration: ' . implode(', ', $missing));
+    }
+}
+
+}
+
+ticket99_require_config();
 
 $male = array();
 	$female = array();
@@ -13,7 +86,7 @@ $male = array();
     $male[] = '<img src="/helpdesk-master/images/avatar1.png">';
     $male[] = '<img src="/helpdesk-master/images/avatar2.png">';
     $male[] = '<img src="/helpdesk-master/images/avatar3.png">';
-    
+
     $female[] = '<img src="/helpdesk-master/images/avatar4.png">';
     $female[] = '<img src="/helpdesk-master/images/avatar5.png">';
 
