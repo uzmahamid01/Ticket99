@@ -79,6 +79,11 @@ function ticket99_require_config() {
 
 ticket99_require_config();
 
+// Identity lives in the session, so it must exist before any code that asks who
+// is making this request — the account checks at the foot of this file included.
+require_once 'core/security/session.php';
+ticket99_session_start();
+
 $male = array();
 	$female = array();
 	$m = rand(0, 2);
