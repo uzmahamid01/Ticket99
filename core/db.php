@@ -1,19 +1,40 @@
 <?php
 
 class db {
-    
+
+    /**
+     * Quote the configured database name for use in a DDL statement.
+     *
+     * The name arrives from the deployment environment rather than from a user
+     * request, but it is still interpolated into CREATE DATABASE and USE, which
+     * cannot take a bound parameter. Restricting it to identifier characters
+     * keeps that interpolation safe no matter how the environment is populated.
+     */
+    private function databaseName() {
+
+        $name = defined('DB_NAME') ? (string) DB_NAME : '';
+
+        if ($name === '' || !preg_match('/^[A-Za-z0-9_]+$/', $name)) {
+            die(json_encode(array('outcome' => false, 'message' => 'Unable to connect')));
+        }
+
+        return $name;
+    }
+
     public function getDBH() {
-        
+
         static $DBH = null;
-      
+
         if (is_null($DBH)) {
+            $database_name = $this->databaseName();
+
             try{
                 $DBH = new PDO('mysql:host=' . HOST .';port=' . PORT . ';', USER, PASSWORD,
                                 array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION));
-                
+
                 //create database if it does not exist.
-                $DBH->query("CREATE DATABASE IF NOT EXISTS jKRhAnyNm9");
-                $DBH->query("use jKRhAnyNm9");
+                $DBH->query("CREATE DATABASE IF NOT EXISTS `" . $database_name . "`");
+                $DBH->query("use `" . $database_name . "`");
                 $DBH->query("CREATE TABLE IF NOT EXISTS `admin_settings` (
                                 `id` int(11) NOT NULL AUTO_INCREMENT,
                                 `self_delete_account` varchar(1) NOT NULL,

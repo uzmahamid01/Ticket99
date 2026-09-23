@@ -21,6 +21,7 @@ define('HOST', $host);
 define('PORT', $port);
 define('USER', $username);
 define('PASSWORD', $password);
+define('DB_NAME', $database_name);
 
 require 'core/db.php';
 require 'core/users.php';
