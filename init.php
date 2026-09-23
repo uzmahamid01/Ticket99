@@ -109,7 +109,11 @@ $time = new time;
 $tickets = new tickets;
 $admin = new admin;
 
-if($users->signed_in()){
+// The signed-in account checks can redirect and die (users::is_locked), which an
+// unauthenticated probe such as health.php must not trigger. Such callers define
+// TICKET99_SKIP_ACCOUNT_CHECKS before including this file; ordinary page scripts
+// and core/process.php define nothing and behave exactly as before.
+if(!defined('TICKET99_SKIP_ACCOUNT_CHECKS') && $users->signed_in()){
 	  $users->account_exists();
 	  $users->is_locked();
 }

@@ -33,6 +33,14 @@ class db {
 
         error_log('ticket99 operation=' . $operation . ' outcome=failure detail=' . $detail);
 
+        // The health endpoint needs to report a failed dependency in its own
+        // response shape rather than have the request killed underneath it, so
+        // a caller may opt into an exception. The detail stays category-only,
+        // exactly as the died-on response does.
+        if (defined('TICKET99_DB_THROW') && TICKET99_DB_THROW) {
+            throw new RuntimeException($operation . ': ' . $detail);
+        }
+
         die(json_encode(array('outcome' => false, 'message' => 'Unable to connect')));
     }
 
