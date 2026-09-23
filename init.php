@@ -23,6 +23,7 @@ define('USER', $username);
 define('PASSWORD', $password);
 define('DB_NAME', $database_name);
 
+require_once 'core/includes/escape.php';
 require 'core/db.php';
 require 'core/users.php';
 require 'core/time.php';
