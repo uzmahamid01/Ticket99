@@ -1,0 +1,13 @@
+# Local environment files — these carry real credentials and must never be committed.
+.env
+.env.*
+
+# The template is value-free and is meant to be tracked.
+!.env.example
+
+# Forge work-order commit control file.
+.forge-commit-ready
+
+# Editor and OS noise.
+.vscode/
+.DS_Store
