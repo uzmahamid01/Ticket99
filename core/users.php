@@ -44,7 +44,13 @@ class users extends db {
                                     $query->bindParam(':id', $res['id'], PDO::PARAM_INT);
                                     $query->execute();
                                     
-                                    setcookie('user', $res['id'], time() + 999999, '/');
+                                    // Credentials accepted. Rotate the session id first so a
+                                    // pre-authentication id cannot be replayed as an
+                                    // authenticated one, then record identity server-side
+                                    // instead of handing the raw users.id to the browser.
+                                    session_regenerate_id(true);
+                                    ticket99_session_set_user_id($res['id']);
+
                                     echo 'success';
                                 }
                               } else {
@@ -114,8 +120,11 @@ class users extends db {
                                               $query->execute();
                           				        }
                                       
-                                      setcookie('user', $res['id'], time() + 999999, '/');
-                                      
+                                      // Registration accepted. Same identity handling as the
+                                      // returning-user path: rotate, then store server-side.
+                                      session_regenerate_id(true);
+                                      ticket99_session_set_user_id($res['id']);
+
                                       echo 'success';
                                       
                                   } else {
